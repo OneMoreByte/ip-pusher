@@ -1,15 +1,12 @@
 # raspi-ip-pusher
-## Simple python script to send the user a Pushbullet notification with the host device's IP address
+## Simple python script to send the user a Pushbullet or Discord notification with the host device's IP address
 
-To set up this script:
+To set up this script to auto-push ip on startup:
 1. Clone the repo to your machine
-2. Put the get\_ip\_addr.py file in a safe location on your machine
-3. Edit the get\_ip\_addr.py file and insert your Pushbullet [Access Token](https://www.pushbullet.com/#settings) on line 18 for the `<pushbullet auth here>` string
-3. type `crontab -e` and pick an editor (if you've never used it before)
-4. Go to the end of the file, and type `@reboot python /path/to/the/get_ip_addr.py &`
-5. Save the file
+2. Move get\_ip\_addr.py file in /usr/bin/
+3. Edit the ip_pusher.json file and insert your Pushbullet [Access Token](https://www.pushbullet.com/#settings) to replace the `<pushbullet auth here>` string
+3. Move ip-pusher.service to `/usr/lib/systemd/system/`
+4. Run `sudo systemctl daemon-reload'
+5. Run `sudo systemctl enable ip-pusher.service`
 
-## Note
-When this script runs, it will first pause for roughly 45 seconds to allow the system to fully boot and let network manager connect to a network. Only then will the program find the machine's IP address and push it to your account. Additionally, if the program fails to retrieve an IP, it will wait 5 seconds, then try again. This process will repeat indefinitely. 
-
-
+See `./get\_ip\_addr.py --help` for more usage

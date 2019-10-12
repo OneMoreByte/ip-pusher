@@ -1,34 +1,109 @@
 #!/usr/bin/env python3
+"""A IP pushing tool for headless devices with ephemeral ip addresses. 
+Pushes IPs to Discord or Pushbullet.
 
-# Attempt to import python 3.0, fall back if necessary
-try:
-    # For Python 3.0 and later
-    from urllib.request import urlopen
-except ImportError:
-    # Fall back to Python 2's urllib2
-    from urllib2 import urlopen
 
-# Import os for bash call and time for sleep functionality
+Usage:
+  get_ip_addr.py discord (-t <token> | --token=<token>)  (-i <id> | --id=<id>)
+  get_ip_addr.py pushbullet (-t <token> | --token=<token>)
+  get_ip_addr.py (-c <file> | --config=<file>)
+  get_ip_addr.py
+
+
+Options:
+  -t <token>, --token=<token>  token for discord or pushbullet
+  -i <id>, --id=<id>           id for discord
+  -c <file>, --config=<file>   [default: /etc/ip-pusher.ini]
+
+
+"""
+
+
 import os
-import time
+import json
+import requests
+from docopt import docopt
 
-# Abstract away variables
-repeat = True
-wait_time = 45
-pushbullet_auth = "<pushbullet auth here>"
-message_title = "Raspi IP"
 
-# Begin Program, attempt to grab system IP
-time.sleep(wait_time)
-while repeat:
-    try:
-        ip_address = str(urlopen('http://ip.42.pl/raw').read()).replace("'", '').replace('b','')
-        repeat = False
-    except ImportError:
-        time.sleep(5)
+DEFAULT_CONFIG = """{
+    'type':  'discord',
+    'id':    '<webhook id>,
+    'token': '<webhook token>,
+}
+"""
 
-# Declare Bash command 
-bash_command = "curl --silent -u \"\"\"" + pushbullet_auth + "\"\":\" -d type=\"note\" -d body=" + ip_address + " -d title=\"" + message_title + "\" 'https://api.pushbullet.com/v2/pushes'"
 
-# Call Bash Command
-os.system(bash_command)
+def get_config():
+    args = docopt(__doc__, version='0.1.0')
+    print(args)
+    if not args['discord'] and not args['pushbullet']:
+        config = load_json_config(args['--config'])
+        args[config['type']] = True
+        args['--id'] = config['id']
+        args['--token'] = config['token']
+    return args
+
+
+def load_json_config(path):
+    c = {}
+    if os.path.exists(path):
+        try:
+            with open(path) as f:
+                c = json.load(f)
+        except Exception as e:
+            print("File error", e)
+            exit(1)
+    else:
+        print("No config. Edit config at", path)
+        try:
+            with open(path) as f:
+                f.write(DEFAULT_CONFIG)
+        except:
+            print("File error")
+            exit(1)
+       
+    return c
+
+
+def get_ip():
+    r = requests.get('http://ip.42.pl/raw')
+    if r.status_code == 200:
+        return r.text
+    else:
+        os.exit(1)
+        return ''
+
+
+def send_discord(webh_id, token, msg):
+    d_url = 'https://discordapp.com/api/webhooks/{}/{}'.format(webh_id, token)
+    d_data = { 'content': msg }
+    res = requests.post(d_url, json=d_data)
+    res.raise_for_status()
+
+
+def send_pushbullet(token, title, msg):
+    pb_url = 'https://api.pushbullet.com/v2/pushes'
+    pb_data =  { 'type': 'note', 'title': title, 'body': msg } 
+    res = requests.post(pb_url, json=pb_data, headers={'Access-Token': token})
+    res.raise_for_status()
+
+
+def main():
+    config = get_config()
+    host = os.uname()[1]
+    ip = get_ip()
+    title = "IP from \"{}\"".format(host)
+    msg = "IP : {}\nDomain (TTL in 5m): {}.jackhil.de".format(ip, host)
+
+    if config['pushbullet']:
+        send_pushbullet(config['--token'], title, msg)
+    elif config['discord']:
+        send_discord(config['--id'], config['--token'], msg)
+    else:
+        print("No configured sender")
+        exit(1)
+
+
+if __name__ == '__main__':
+    main()
+
