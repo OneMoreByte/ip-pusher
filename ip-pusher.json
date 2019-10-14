@@ -1,5 +1,5 @@
 {
-  "type": "discord",
-  "id": "632601583154102283",
-  "token": "ccQoCDuqBYT8H3ldfu4G3IPz1wgo1XKveemNQlsnJ7_nclhTFIcmZ6wqJJAluKd0nbhV"
+  "type": "<'discord' or 'pushbullet'",
+  "id": "<id (only for discord)>",
+  "token": "<token>"
 }
