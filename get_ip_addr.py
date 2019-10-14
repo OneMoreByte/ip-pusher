@@ -13,7 +13,7 @@ Usage:
 Options:
   -t <token>, --token=<token>  token for discord or pushbullet
   -i <id>, --id=<id>           id for discord
-  -c <file>, --config=<file>   [default: /etc/ip-pusher.ini]
+  -c <file>, --config=<file>   [default: /etc/ip-pusher.json]
 
 
 """
@@ -23,14 +23,6 @@ import os
 import json
 import requests
 from docopt import docopt
-
-
-DEFAULT_CONFIG = """{
-    'type':  'discord',
-    'id':    '<webhook id>,
-    'token': '<webhook token>,
-}
-"""
 
 
 def get_config():
@@ -55,12 +47,7 @@ def load_json_config(path):
             exit(1)
     else:
         print("No config. Edit config at", path)
-        try:
-            with open(path) as f:
-                f.write(DEFAULT_CONFIG)
-        except:
-            print("File error")
-            exit(1)
+        exit(1)
        
     return c
 
